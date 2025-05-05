@@ -1,38 +1,40 @@
-# servo.py
-import RPi.GPIO as GPIO
 import time
+import RPi.GPIO as GPIO
 
-def set_servo_angle(pwm, angle):
-    duty = 2.5 + (angle / 18.0)
-    pwm.ChangeDutyCycle(duty)
+SERVO_PIN = 18
+
+# GPIO setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(SERVO_PIN, GPIO.OUT)
+servo_pwm = GPIO.PWM(SERVO_PIN, 50)
+servo_pwm.start(0)
+
+def set_angle(angle):
+    # Maps -90 to +90 degrees to PWM duty cycle
+    duty = 2.5 + (angle + 90) * 10 / 180
+    servo_pwm.ChangeDutyCycle(duty)
+    time.sleep(0.5)
+    servo_pwm.ChangeDutyCycle(0)
 
 def servo_control(queue):
-    GPIO.setmode(GPIO.BCM)
-    servo_pin = 18
-    GPIO.setup(servo_pin, GPIO.OUT)
-
-    pwm = GPIO.PWM(servo_pin, 50)
-    pwm.start(0)
-    print("Servo ready.")
-
     try:
         while True:
             if not queue.empty():
-                label = queue.get()
-                print(f"Servo received: {label}")
-                angle = {
-                    "Criollo": 45,
-                    "Forastero": 90,
-                    "Trinitario": -45,
-                    "Unknown": -90
-                }.get(label, 0)
+                bean_type = queue.get()
 
-                set_servo_angle(pwm, angle)
+                if bean_type == "Criollo":
+                    set_angle(45)
+                elif bean_type == "Forastero":
+                    set_angle(90)
+                elif bean_type == "Trinitario":
+                    set_angle(-45)
+                elif bean_type == "Unknown":
+                    set_angle(-90)
+
                 time.sleep(5)
-                set_servo_angle(pwm, 0)
-                time.sleep(0.5)
+                set_angle(0)
     except KeyboardInterrupt:
-        print("Servo cleanup")
+        pass
     finally:
-        pwm.stop()
+        servo_pwm.stop()
         GPIO.cleanup()
