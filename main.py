@@ -1,17 +1,18 @@
-from queue import Queue
+# main.py
 import threading
+from queue import Queue
 import servo
 import camera_dashboard
 
 def main():
-    command_queue = Queue()
+    # Create a shared queue for communication
+    q = Queue()
 
-    # Start servo thread
-    servo.start_servo_thread(command_queue)
+    # Start the servo controller in its own thread
+    threading.Thread(target=servo.servo_control, args=(q,), daemon=True).start()
 
-    # Start camera dashboard with queue access
-    camera_thread = threading.Thread(target=camera_dashboard.start_dashboard, args=(command_queue,))
-    camera_thread.start()
+    # Start the camera dashboard (must be on main thread!)
+    camera_dashboard.start_dashboard(q)
 
 if __name__ == "__main__":
     main()

@@ -142,3 +142,4 @@ def start_dashboard(queue: Queue):
     root.mainloop()
     cap.release()
     cv2.destroyAllWindows()
+
